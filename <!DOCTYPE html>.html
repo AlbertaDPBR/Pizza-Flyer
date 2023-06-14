@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Pizza Flyer</title>
+    <style>
+      #gameCanvas {
+        border: 1px solid black;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      // Pizza properties
+      const pizza = {
+        x: 50,
+        y: canvas.height / 2,
+        size: 50,
+        velocity: 2,
+      };
+
+      // Stalagmite and stalactite properties
+      const obstacles = [];
+      const obstacleWidth = 80;
+      const obstacleHeight = 250;
+      const gapHeight = 150;
+      const gapPosition = canvas.width / 2;
+
+      let score = 0;
+      let isGameOver = false;
+
+      // Handle pizza flap
+      function flap() {
+        pizza.y -= 40;
+      }
+
+      // Update game state
+      function update() {
+        if (isGameOver) {
+          return;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Move the pizza
+        pizza.y += pizza.velocity;
+
+        // Draw the pizza
+        ctx.fillStyle = "red";
+        ctx.fillRect(pizza.x, pizza.y, pizza.size, pizza.size);
+
+        // Move and draw the obstacles
+        for (let i = 0; i < obstacles.length; i++) {
+          const obstacle = obstacles[i];
+
+          obstacle.x -= pizza.velocity;
+
+          // Check collision with pizza
+          if (
+            pizza.x + pizza.size > obstacle.x &&
+            pizza.x < obstacle.x + obstacleWidth &&
+            (pizza.y < obstacle.y + obstacleHeight || pizza.y + pizza.size > obstacle.y + obstacleHeight + gapHeight)
+          ) {
+            gameOver();
+            return;
+          }
+
+          // Increment score if pizza passes an obstacle
+          if (obstacle.x + obstacleWidth < pizza.x && !obstacle.passed) {
+            score++;
+            obstacle.passed = true;
+          }
+
+          // Draw the obstacles
+          ctx.fillStyle = "gray";
+          ctx.fillRect(obstacle.x, obstacle.y, obstacleWidth, obstacleHeight);
+          ctx.fillRect(obstacle.x, obstacle.y + obstacleHeight + gapHeight, obstacleWidth, canvas.height - obstacle.y - obstacleHeight - gapHeight);
+        }
+
+        // Remove off-screen obstacles
+        obstacles.forEach((obstacle, index) => {
+          if (obstacle.x + obstacleWidth < 0) {
+            obstacles.splice(index, 1);
+          }
+        });
+
+        // Generate new obstacles
+        if (obstacles.length === 0 || obstacles[obstacles.length - 1].x < canvas.width - gapPosition) {
+          const obstacleY = Math.random() * (canvas.height - obstacleHeight - gapHeight);
+          obstacles.push({ x: canvas.width, y: obstacleY, passed: false });
+        }
+
+        // Draw score
+        ctx.fillStyle = "black";
+        ctx.font = "24px Arial";
+        ctx.fillText("Score: " + score, 10, 30);
+
+        requestAnimationFrame(update);
+      }
+
+      // Game over
+      function gameOver() {
+        isGameOver = true;
+        ctx.fillStyle = "red";
+        ctx.font = "48px Arial";
+        ctx.fillText("Game Over", canvas.width / 2 - 100
